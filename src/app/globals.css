@@ -1,0 +1,106 @@
+@import 'tailwindcss';
+@theme inline {
+  --font-sans: Arial, Helvetica, sans-serif;
+  --color-ink: #202634;
+  --color-muted: #6c7281;
+  --color-brand: #6554c0;
+}
+:root {
+  color-scheme: light;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #f7f8fa;
+  color: #202634;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+button:not(:disabled),
+select {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+:focus-visible {
+  outline: 3px solid #8b7bd4;
+  outline-offset: 3px;
+}
+::selection {
+  background: #e9e3ff;
+}
+.field {
+  width: 100%;
+  border: 1px solid #dfe2e9;
+  border-radius: 8px;
+  background: white;
+  padding: 10px 12px;
+  font: inherit;
+  color: #202634;
+}
+.field:focus {
+  outline: 2px solid #9383d4;
+  outline-offset: 1px;
+  border-color: transparent;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 10px 15px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background-color 0.15s;
+  white-space: nowrap;
+}
+.btn-primary {
+  background: #6554c0;
+  color: white;
+  border: 1px solid #6554c0;
+  box-shadow: 0 1px 2px #00000010;
+}
+.btn-primary:hover {
+  background: #5543ac;
+}
+.btn-secondary {
+  background: white;
+  color: #454c5b;
+  border: 1px solid #dfe2e9;
+}
+.btn-secondary:hover {
+  background: #f5f5f9;
+}
+.panel {
+  background: white;
+  border: 1px solid #e5e7ed;
+  border-radius: 12px;
+  box-shadow: 0 2px 3px #20263402;
+}
+.label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

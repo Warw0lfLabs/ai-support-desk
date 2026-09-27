@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum AnalysisState {
+  NOT_STARTED
+  PROCESSING
+  SUCCEEDED
+  FAILED
+}
+
+enum Category {
+  BILLING
+  TECHNICAL
+  ACCOUNT
+  FEATURE_REQUEST
+  OTHER
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum MessageRole {
+  CUSTOMER
+  SUPPORT
+}
+
+model Ticket {
+  id                  String          @id @default(uuid()) @db.Uuid
+  title               String          @db.VarChar(160)
+  status              TicketStatus    @default(OPEN)
+  version             Int             @default(1)
+  conversationVersion Int             @default(1)
+  messages            TicketMessage[]
+  createdAt           DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime        @updatedAt @db.Timestamptz(3)
+  analysis            TicketAnalysis?
+
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
+  @@index([status, createdAt(sort: Desc), id(sort: Desc)])
+}
+
+model TicketAnalysis {
+  ticketId                    String        @id @db.Uuid
+  ticket                      Ticket        @relation(fields: [ticketId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  state                       AnalysisState @default(NOT_STARTED)
+  summary                     String?       @db.VarChar(600)
+  category                    Category?
+  priority                    Priority?
+  suggestedResponse           String?       @db.VarChar(4000)
+  provider                    String?       @db.VarChar(80)
+  model                       String?       @db.VarChar(160)
+  analyzedConversationVersion Int?
+  omittedMessageCount         Int           @default(0)
+  lastErrorCode               String?       @db.VarChar(80)
+  createdAt                   DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt                   DateTime      @updatedAt @db.Timestamptz(3)
+}
+
+model TicketMessage {
+  id              String      @id @default(uuid()) @db.Uuid
+  ticketId        String      @db.Uuid
+  ticket          Ticket      @relation(fields: [ticketId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sequence        Int
+  clientMessageId String?     @db.Uuid
+  authorRole      MessageRole
+  body            String      @db.VarChar(10000)
+  createdAt       DateTime    @default(now()) @db.Timestamptz(3)
+
+  @@unique([ticketId, sequence])
+  @@unique([ticketId, clientMessageId])
+}

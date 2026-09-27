@@ -1,0 +1,85 @@
+services:
+  db:
+    image: postgres:17.11-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-support}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-support_desk}
+    ports:
+      - '127.0.0.1:5434:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  db-test:
+    image: postgres:17.11-alpine
+    profiles: ['test']
+    environment:
+      POSTGRES_USER: support
+      POSTGRES_PASSWORD: test_only
+      POSTGRES_DB: support_desk_test
+    ports:
+      - '127.0.0.1:5433:5432'
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U support -d support_desk_test']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  migrate:
+    build:
+      context: .
+      target: tools
+    profiles: ['app']
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-support}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-support_desk}
+    command: ['npm', 'run', 'db:migrate']
+    depends_on:
+      db:
+        condition: service_healthy
+  seed:
+    build:
+      context: .
+      target: tools
+    profiles: ['tools']
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-support}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-support_desk}
+      ALLOW_DEMO_SEED: 'true'
+    command: ['npm', 'run', 'db:seed']
+    depends_on:
+      db:
+        condition: service_healthy
+  app:
+    build: .
+    profiles: ['app']
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-support}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-support_desk}
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
+      DEMO_CUSTOMER_REPLIES: ${DEMO_CUSTOMER_REPLIES:-false}
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com/v1}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-}
+      AI_TIMEOUT_MS: ${AI_TIMEOUT_MS:-20000}
+    ports:
+      - '127.0.0.1:3000:3000'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 8s
+      retries: 5
+volumes:
+  postgres_data:
